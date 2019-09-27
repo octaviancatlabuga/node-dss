@@ -7,6 +7,7 @@ const debug = require('debug')('dss')
 const router = Router()
 // object to store the requests
 router.__dataStore = {}
+router.__statusStore = {}
 
 console.log('data before: ' + router.__dataStore[0])
 
@@ -28,12 +29,12 @@ router.param('id', (req, res, next, id) => {
   req.params = {
     id
   }
-
   next()
 })
 
 // parse all bodies up to 10mb regardless of mime type as a buffer
 router.use(bodyParser.raw({ limit: '10mb', type: () => true }))
+
 
 const bodyDebug = debug.extend('body')
 
@@ -51,16 +52,20 @@ router.post('/data/:id', (req, res) => {
   bodyDebug(req.body.toString())
 
   router.__dataStore[deviceId].push(req.body)
-  console.log('data before: ' + router.__dataStore[deviceId].length)
+  //console.log('data before: ' + Object.keys(req.body))
+  console.log('data before: ' + req.connection.remoteAddress)
 
   res.statusCode = 200
   res.end()
 })
 
 //------------ get method -------------
-router.get('/data/:id', (req, res) => {
+router.get('/data/:id/:remoteId', (req, res) => {
   const deviceId = req.params.id
-  console.log(deviceId);
+  //console.log('req: ' + req)
+  //console.log('req params: ' + req.params)
+  console.log('req params id: ' + req.params.id)
+  console.log("st: " + req.params.remoteId)
   if (!router.__dataStore[deviceId] || router.__dataStore[deviceId].length === 0) {
     res.statusCode = 404
     res.end()
@@ -90,5 +95,30 @@ router.put('/data/:id', (req, res) => {
     res.end()
 })
 
+router.put('/status/:localId/:remoteId/:dateTime', (req, res) => {
+  // id of the who ever sends the request, comes after /data/<deviceId>
+  const local = req.params.localId
+  const remote = req.params.remoteId
+  var time = req.params.dateTime
+
+  console.log('Time: ' + time)
+
+  if (!router.__statusStore[local])
+  {
+    // make an empty array
+    router.__statusStore.local = undefined;
+  }
+  // log the body, using the debug body instance
+  bodyDebug(req.body.toString())
+  var storedMsg = {localId: local, remoteId: remote, dateTime: time}
+  storedMsg["body"] = req.body
+  // replace the request everytime a new one is performed
+  router.__statusStore.local = storedMsg;
+  //console.log("Array length: " + router.__statusStore[local].length)
+  console.log("remote: " + router.__statusStore.local.remoteId)
+  console.log("date: " + router.__statusStore.local.dateTime)
+  res.statusCode = 200
+  res.end()
+})
 
 module.exports = router
