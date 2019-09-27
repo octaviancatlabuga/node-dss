@@ -83,23 +83,7 @@ router.put('/data/:id', (req, res) => {
     }
     // log the body, using the debug body instance
     bodyDebug(req.body.toString())
-    router.__dataStore[deviceId][0] = req.body;
-
-    res.statusCode = 200
-    res.end()
-})
-
-router.put('/data/:id', (req, res) => {
-    const deviceId = req.params.id
-    if (!router.__dataStore[deviceId])
-    {
-      // make an empty array
-      router.__dataStore[deviceId] = []
-      // add a empty palceholder to message array
-      router.__dataStore[deviceId][0] = undefined;
-    }
-    // log the body, using the debug body instance
-    bodyDebug(req.body.toString())
+    // replace the request everytime a new one is performed
     router.__dataStore[deviceId][0] = req.body;
 
     res.statusCode = 200
